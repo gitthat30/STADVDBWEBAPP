@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js" type="text/javascript"></script>
+<script src="script.js"></script>
+<html>
+
+	<head>
+		<title>STADVDB</title>
+	</head>
+
+	<body>
+	<center>
+		<h1>IMDB DATABASE</h1>
+
+		<h2>Insert</h2>
+
+		<form action="/insertsql">
+			Movie Name: <input type="text" name="name" placeholder="Movie Name" value="{{name}}"><br><br>
+			Year: <input type="text" name="year" placeholder="Year" value="{{year}}"><br><br>
+			Rank: <input type="text" name="rank" placeholder="Movie Rank" value="{{rank}}"><br><br>
+			Genres: <input type="text" name="genres" placeholder="Movie Genres" value="{{genres}}"><br><br>
+			Director: <input type="text" name="director" placeholder="Movie Director" value="{{director}}"><br><br>
+			<button type="submit">Submit</button>
+		</form>
+
+		
+		<br><br>
+		<a href = "/">Back</a>
+	</center>
+		
+	</body>
+
+</html>

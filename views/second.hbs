@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js" type="text/javascript"></script>
+<script src="script.js"></script>
+<html>
+
+	<head>
+		<title>STADVDB</title>
+	</head>
+
+	<body>
+	<center>
+		<h1>IMDB DATABASE</h1>
+
+		<form action="/querysql">
+			<input type="text" name="id" placeholder="Enter Movie ID Here" value="{{id}}">
+			<br><br>
+			<button type="submit">Find</button>
+		</form>
+		<br>
+
+		<form action="/updatesql">
+			<input type="hidden" name="id" value="{{id}}">
+			Movie Name: <input type="text" name="name" placeholder="Movie Name" value="{{name}}"><br><br>
+			Year: <input type="text" name="year" placeholder="Year" value="{{year}}"><br><br>
+			Rank: <input type="text" name="rank" placeholder="Movie Rank" value="{{rank}}"><br><br>
+			Genres: <input type="text" name="genres" placeholder="Movie Genres" value="{{genres}}"><br><br>
+			Director: <input type="text" name="director" placeholder="Movie Director" value="{{director}}"><br><br>
+			{{#if (Equal id null)}}
+			{{else}}
+				<button type="submit">Update</button>
+			{{/if}}
+		</form>
+		<br>
+		<form action="/deletesql">
+			<input type="hidden" name="id" value="{{id}}">
+			
+			{{#if (Equal id null)}}
+			{{else}}
+				<button type="submit">Delete</button>
+			{{/if}}
+		</form>
+
+		<br><br>
+		
+		<a href = "/third">Insert a new Record</a>
+	</center>
+	
+	</body>
+
+</html>
