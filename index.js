@@ -3,13 +3,43 @@
 const express = require('express');
 var mysql = require('mysql2');
 var connection = mysql.createConnection({
-    host     : 'localhost',
+    host     : 'ccscloud3.dlsu.edu.ph',
+    port     : 39066,
     user     : 'root',
-    password : 'asdzxc',
+    password : 'Asdzxc123!',
     database : 'imdb_full'
-  });
+});
 
-connection.connect()
+connection.connect((error) => {
+    if(error) console.log(error);
+    else console.log("Successful Connection to CCSCLOUD0 - imdb_full")
+})
+
+var connection2 = mysql.createConnection({
+    host     : 'ccscloud3.dlsu.edu.ph',
+    port     : 39067,
+    user     : 'root',
+    password : 'Asdzxc123!',
+    database : 'imdb_b1980'
+});
+
+connection2.connect((error) => {
+    if(error) console.log(error);
+    else console.log("Successful Connection to CCSCLOUD1 - imdb_b1980")
+})
+
+var connection3 = mysql.createConnection({
+    host     : 'ccscloud3.dlsu.edu.ph',
+    port     : 39068,
+    user     : 'root',
+    password : 'Asdzxc123!',
+    database : 'imdb_a1980'
+});
+
+connection3.connect((error) => {
+    if(error) console.log(error);
+    else console.log("Successful Connection to CCSCLOUD2 - imdb_a1980")
+})
 
 // import module `hbs`
 const hbs = require('hbs');
