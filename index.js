@@ -49,7 +49,7 @@ hbs.registerHelper('Equal', function(x, y) {
 
 const app = express();
 app.use(express.static('script')); 
-const port = 80;
+const port = 9090;
 
 // set `hbs` as view engine
 app.set('view engine', 'hbs');
