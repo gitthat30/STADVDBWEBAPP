@@ -255,6 +255,9 @@ app.get('/updatesql', async function(req, res) {
         req.query.rank = null
     }
 
+
+    const sql = "UPDATE movies SET name = \'" + req.query.name + "\', year = " + req.query.year + ", `rank` = " + req.query.rank + ", genres = \'" + req.query.genres + "\', director = \'" + req.query.director + "\' where id = " + req.query.id;
+
     await new Promise((resolve) => {
         testConnections()
         attemptReconnect()
@@ -269,22 +272,43 @@ app.get('/updatesql', async function(req, res) {
 
     sql = "UPDATE movies SET name = \'" + req.query.name + "\', year = " + req.query.year + ", `rank` = " + req.query.rank + ", genres = \'" + req.query.genres + "\', director = \'" + req.query.director + "\' where id = " + req.query.id;
 
-
     await new Promise ((resolve) => {
-        
-        connection.query("UPDATE movies SET name = \'" + req.query.name + "\', year = " + req.query.year + ", `rank` = " + req.query.rank + ", genres = \'" + req.query.genres + "\', director = \'" + req.query.director + "\' where id = " + req.query.id, function (error, results, fields) {
+        connection.query(sql, function (error, results, fields) {
             if (error) throw error;
             resolve(results)
-          });
+        });
     })
-    result = await new Promise ((resolve) => {
+
+    const result = await new Promise ((resolve) => {
         connection.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
             if (error) throw error;
             resolve(results)
-          });
+        });
     })
 
-    
+    const sql2 = "UPDATE movies SET name = \'" + req.query.name + "\', year = " + req.query.year + ", `rank` = " + req.query.rank + ", genres = \'" + req.query.genres + "\', director = \'" + req.query.director + "\' where id = " + req.query.id;
+
+    await new Promise (async (resolve) => {
+        if(req.query.year < 1980){
+            connection2.query(sql2, function (error, results, fields) {
+                if (error) resolve(error)
+                else {
+                    console.log("Updating data in node 1")
+                    resolve(results)
+                }
+            });
+        }
+        else {
+            connection3.query(sql2, function (error, results, fields) {
+                if (error) resolve(error)
+                else {
+                    console.log("Updating data in node 2")
+                    resolve(results)
+                }
+            });
+        }
+    });
+
     res.render('second', result[0])
 })
 
