@@ -5,7 +5,6 @@ var mysql = require('mysql2');
 
 var connection, connection2, connection3
 
-const {TextDecoder, TextEncoder} = require("util");
 
 const connect0 = async () => {
     connection = mysql.createConnection({
