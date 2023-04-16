@@ -7,8 +7,8 @@ var connection, connection2, connection3
 
 const connect0 = async () => {
     connection = mysql.createConnection({
-        host     : 'ccscloud3.dlsu.edu.ph',
-        port     : 39066,
+        host     : '172.16.3.166',
+        port     : 3306,
         user     : 'root',
         password : 'Asdzxc123!',
         database : 'imdb_full'
@@ -31,8 +31,8 @@ const connect0 = async () => {
 
 const connect1 = async () => {
     connection2 = mysql.createConnection({
-        host     : 'ccscloud3.dlsu.edu.ph',
-        port     : 39067,
+        host     : '172.16.3.167',
+        port     : 3306,
         user     : 'root',
         password : 'Asdzxc123!',
         database : 'imdb_b1980'
@@ -54,8 +54,8 @@ const connect1 = async () => {
 
 const connect2 = async () => {
     connection3 = mysql.createConnection({
-        host     : 'ccscloud3.dlsu.edu.ph',
-        port     : 39068,
+        host     : '172.16.3.168',
+        port     : 3306,
         user     : 'root',
         password : 'Asdzxc123!',
         database : 'imdb_a1980'
@@ -154,7 +154,7 @@ const runQueue = async () => {
     console.log("There are " + result.length +" queries in the queue")
 
     for(let i = 0;i < result.length;i++) {
-        await new Promise ((resolve) => {
+        await new Promise (async (resolve) => {
             switch(result[i].node) {
                 case 0:
                     if(node0) {
@@ -164,6 +164,38 @@ const runQueue = async () => {
                                 console.log("In use: node 0")
                             }
                         })
+
+                        if(result[i].insert == true) {
+                            result2 = await new Promise ((resolve) => {
+                                connection.query('SELECT * FROM movies WHERE name = \'' + result[i].name + "\' and year = " + result[i].year + " and `rank` = " + result[i].rank + " and genres = \'" + result[i].genres + "\' and director = \'" + result[i].director + "\'", function (error, results, fields) {
+                                    if (error) throw error;
+                                    resolve(results)
+                                  });
+                            })
+
+
+                            console.log("Updating ID number")
+                            update = "UPDATE movies SET id = "  + result2[0].id + " WHERE id = " + result[i].oldid
+
+                            if(result[i].year < 1980) {
+                                await new Promise ((resolve) => {
+                                    connection2.query('UPDATE movies SET id = ' + result2[0].id + " WHERE name = \'" + result[i].name + "\' and year = " + result[i].year + " and `rank` = " + result[i].rank + " and genres = \'" + result[i].genres + "\' and director = \'" + result[i].director + "\'", function (error, results, fields) {
+                                        if (error) throw error;
+                                        resolve(results)
+                                    });
+                                })
+                            }
+                            else {
+                                await new Promise ((resolve) => {
+                                    connection3.query('UPDATE movies SET id = ' + result2[0].id + " WHERE name = \'" + result[i].name + "\' and year = " + result[i].year + " and `rank` = " + result[i].rank + " and genres = \'" + result[i].genres + "\' and director = \'" + result[i].director + "\'", function (error, results, fields) {
+                                        if (error) throw error;
+                                        resolve(results)
+                                    });
+                                })
+                            }
+                        }
+
+                        
 
                         db.deleteOne(queue, {sql:result[i].sql, node:result[i].node}, (result) => {
                             console.log(result)
@@ -240,13 +272,32 @@ app.get('/querysql', async function(req, res) {
         resolve()
     })  
 
-    result = await new Promise ((resolve) => {
-        connection.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
-            if (error) throw error;
-            resolve(results)
-          });
-    })
-    console.log(result)
+    if(flag0 == true) {
+        result = await new Promise ((resolve) => {
+            connection.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                if (error) throw error;
+                resolve(results)
+              });
+        })
+    }
+    else {
+        result = await new Promise ((resolve) => {
+            connection2.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                if (error) throw error;
+                resolve(results)
+              });
+        })
+
+        if(result.length == 0) {
+            result = await new Promise ((resolve) => {
+                connection3.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                    if (error) throw error;
+                    resolve(results)
+                  });
+            })
+        }
+    }
+    console.log(result.length)
     res.render('second', result[0])
 })
 
@@ -269,23 +320,58 @@ app.get('/updatesql', async function(req, res) {
 
     sql = "UPDATE movies SET name = \'" + req.query.name + "\', year = " + req.query.year + ", `rank` = " + req.query.rank + ", genres = \'" + req.query.genres + "\', director = \'" + req.query.director + "\' where id = " + req.query.id;
    
+    if(flag0 == true) {
+        await new Promise ((resolve) => {
+            connection.query(sql, function (error, results, fields) {
+                if (error) throw error;
+                resolve(results)
+            });
+        })
+    }
+    else {
+        console.log("Node 0 is offline, adding query to queue")
+            newquery = {
+                sql: sql,
+                node: 0
+        }
 
-    await new Promise ((resolve) => {
-        connection.query(sql, function (error, results, fields) {
-            if (error) throw error;
-            resolve(results)
-        });
-    })
+        await new Promise((resolve) => {
+            db.insertOne(queue, newquery, (result) => {
+                resolve(result)
+            })
+        })
+    }
+    
+    if(flag0 == true) {
+        result = await new Promise ((resolve) => {
+            connection.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                if (error) throw error;
+                resolve(results)
+            });
+        })
+    }
+    else {
+        result = await new Promise ((resolve) => {
+            connection2.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                if (error) throw error;
+                resolve(results)
+              });
+        })
 
-    const result = await new Promise ((resolve) => {
-        connection.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
-            if (error) throw error;
-            resolve(results)
-        });
-    })
+        if(result.length == 0) {
+            result = await new Promise ((resolve) => {
+                connection3.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                    if (error) throw error;
+                    resolve(results)
+                  });
+            })
+        }
+    }
+
+    
 
      // If year dips under or above 1980 and the record has to be transferred
-    sql2 = "INSERT INTO movies(id, name, year, `rank`, genres, director) values(" + result[0].id +", \'" + result[0].name + "\', " + result[0].year + ", " + result[0].rank + ", \'" + result[0].genres + "\', \'" + result[0].director + "\')"
+    sql2 = "INSERT INTO movies(id, name, year, `rank`, genres, director) values(" + result[0].id +", \'" + req.query.name + "\', " + req.query.year + ", " + req.query.rank + ", \'" + req.query.genres + "\', \'" + req.query.director + "\')"
     delsql = 'DELETE FROM movies WHERE id = ' + result[0].id
 
     if(req.query.year < 1980 && req.query.oldyear < 1980) {
@@ -296,8 +382,10 @@ app.get('/updatesql', async function(req, res) {
                 node: 1
             }
 
-            db.insertOne(queue, newquery, (result) => {
-                resolve(result)
+            await new Promise((resolve) => {
+                db.insertOne(queue, newquery, (result) => {
+                    resolve(result)
+                })
             })
         }
         else {
@@ -442,6 +530,33 @@ app.get('/updatesql', async function(req, res) {
             })
         }      
     }
+
+    //Render new edit
+    if(flag0 == true) {
+        result = await new Promise ((resolve) => {
+            connection.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                if (error) throw error;
+                resolve(results)
+            });
+        })
+    }
+    else {
+        result = await new Promise ((resolve) => {
+            connection2.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                if (error) throw error;
+                resolve(results)
+              });
+        })
+
+        if(result.length == 0) {
+            result = await new Promise ((resolve) => {
+                connection3.query('SELECT * FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                    if (error) throw error;
+                    resolve(results)
+                  });
+            })
+        }
+    }
     
     res.render('second', result[0])
 })
@@ -481,70 +596,165 @@ app.get('/insertsql', async function(req, res) {
 
     sql = "INSERT INTO movies(name, year, `rank`, genres, director) values(\'" + req.query.name + "\', " + req.query.year + ", " + req.query.rank + ", \'" + req.query.genres + "\', \'" + req.query.director + "\')"
     
-    await new Promise (async (resolve) => {
-        
-        connection.query("INSERT INTO movies(name, year, `rank`, genres, director) values(\'" + req.query.name + "\', " + req.query.year + ", " + req.query.rank + ", \'" + req.query.genres + "\', \'" + req.query.director + "\')", function (error, results, fields) {
-            if (error) resolve(error);
-            console.log(results)
-            resolve(results)
-        });
-    })
+    if(flag0 == true) {
+        await new Promise ((resolve) => {
+            connection.query(sql, function (error, results, fields) {
+                if (error) throw error;
+                console.log(results)
+                resolve(results)
+            });
+        })
+    }
+    else {
+        console.log("Node 0 is offline, adding query to queue")
+            newquery = {
+                sql: sql,
+                node: 0,
+                insert: true
+        }
 
-    result = await new Promise ((resolve) => {
-        connection.query('SELECT * FROM movies WHERE name = \'' + req.query.name + "\' and year = " + req.query.year + " and `rank` = " + req.query.rank + " and genres = \'" + req.query.genres + "\' and director = \'" + req.query.director + "\'", function (error, results, fields) {
-            if (error) throw error;
-            resolve(results)
-          });
-    })
+        await new Promise (async (resolve) => {
+            if(req.query.year < 1980){
+                if(flag1 == false) {
+                    console.log("Node 1 is offline, adding query to queue")
+                    newquery = {
+                        sql: sql,
+                        node: 1
+                    }
+    
+                    db.insertOne(queue, newquery, (result) => {
+                        resolve(result)
+                    })
+                }
+                else {
+                    connection2.query(sql, function (error, results, fields) {
+                        if (error) resolve(error)
+                        else {
+                            console.log("Inserting into node 1")
+                            resolve(results)
+                        }
+                    });
+                }
+            }
+            else {
+                if(flag2 == false) {
+                    console.log("Node 2 is offline, adding query to queue")
+                    newquery = {
+                        sql: sql,
+                        node: 2
+                    }
+    
+                    db.insertOne(queue, newquery, (result) => {
+                        resolve(result)
+                    })
+                }
+                else {
+                    connection3.query(sql, function (error, results, fields) {
+                        if (error) resolve(error)
+                        else {
+                            console.log("Inserting into node 2")
+                            resolve(results)
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    if(flag0 == true) {
+        result = await new Promise ((resolve) => {
+            connection.query('SELECT * FROM movies WHERE name = \'' + req.query.name + "\' and year = " + req.query.year + " and `rank` = " + req.query.rank + " and genres = \'" + req.query.genres + "\' and director = \'" + req.query.director + "\'", function (error, results, fields) {
+                if (error) throw error;
+                resolve(results)
+              });
+        })
+    }
+    else {
+        result = await new Promise ((resolve) => {
+            connection2.query('SELECT * FROM movies WHERE name = \'' + req.query.name + "\' and year = " + req.query.year + " and `rank` = " + req.query.rank + " and genres = \'" + req.query.genres + "\' and director = \'" + req.query.director + "\'", function (error, results, fields) {
+                if (error) throw error;
+                resolve(results)
+              });
+        })
+
+        if(result.length == 0) {
+            result = await new Promise ((resolve) => {
+                connection3.query('SELECT * FROM movies WHERE name = \'' + req.query.name + "\' and year = " + req.query.year + " and `rank` = " + req.query.rank + " and genres = \'" + req.query.genres + "\' and director = \'" + req.query.director + "\'", function (error, results, fields) {
+                    if (error) throw error;
+                    resolve(results)
+                  });
+            })
+        }
+    }
+
 
     sql2 = "INSERT INTO movies(id, name, year, `rank`, genres, director) values(" + result[0].id +", \'" + result[0].name + "\', " + result[0].year + ", " + result[0].rank + ", \'" + result[0].genres + "\', \'" + result[0].director + "\')"
 
-    await new Promise (async (resolve) => {
-        if(req.query.year < 1980){
-            if(flag1 == false) {
-                console.log("Node 1 is offline, adding query to queue")
-                newquery = {
-                    sql: sql2,
-                    node: 1
-                }
+    if(flag0 == false) {
+        newquery.oldid = result[0].id;
+        newquery.name = result[0].name;
+        newquery.year = result[0].year;
+        newquery.rank = result[0].rank;
+        newquery.genres = result[0].genres;
+        newquery.director = result[0].director;
 
-                db.insertOne(queue, newquery, (result) => {
-                    resolve(result)
-                })
+        await new Promise((resolve) => {
+            db.insertOne(queue, newquery, async (result) => {
+                await new Promise(r => setTimeout(r, 1500));
+                resolve(result)
+            })
+        })
+
+    }
+
+    if(flag0 == true) {
+        await new Promise (async (resolve) => {
+            if(req.query.year < 1980){
+                if(flag1 == false) {
+                    console.log("Node 1 is offline, adding query to queue")
+                    newquery = {
+                        sql: sql2,
+                        node: 1
+                    }
+    
+                    db.insertOne(queue, newquery, (result) => {
+                        resolve(result)
+                    })
+                }
+                else {
+                    connection2.query(sql2, function (error, results, fields) {
+                        if (error) resolve(error)
+                        else {
+                            console.log("Inserting into node 1")
+                            resolve(results)
+                        }
+                    });
+                }
             }
             else {
-                connection2.query(sql2, function (error, results, fields) {
-                    if (error) resolve(error)
-                    else {
-                        console.log("Inserting into node 1")
-                        resolve(results)
+                if(flag2 == false) {
+                    console.log("Node 2 is offline, adding query to queue")
+                    newquery = {
+                        sql: sql2,
+                        node: 2
                     }
-                });
-            }
-        }
-        else {
-            if(flag2 == false) {
-                console.log("Node 2 is offline, adding query to queue")
-                newquery = {
-                    sql: sql2,
-                    node: 2
+    
+                    db.insertOne(queue, newquery, (result) => {
+                        resolve(result)
+                    })
                 }
-
-                db.insertOne(queue, newquery, (result) => {
-                    resolve(result)
-                })
+                else {
+                    connection3.query(sql2, function (error, results, fields) {
+                        if (error) resolve(error)
+                        else {
+                            console.log("Inserting into node 2")
+                            resolve(results)
+                        }
+                    });
+                }
             }
-            else {
-                connection3.query(sql2, function (error, results, fields) {
-                    if (error) resolve(error)
-                    else {
-                        console.log("Inserting into node 2")
-                        resolve(results)
-                    }
-                });
-            }
-        }
-    });
+        });
+    }
 
 
     res.render('second', result[0])
@@ -567,12 +777,28 @@ app.get('/deletesql', async function(req, res) {
 
     sql = 'DELETE FROM movies WHERE id = ' + req.query.id
 
-    result = await new Promise ((resolve) => {
-        connection.query(sql, function (error, results, fields) {
-            if (error) throw error;
-            resolve(results)
-        });
-    })
+    if(flag0 == true) {
+        result = await new Promise ((resolve) => {
+            connection.query(sql, function (error, results, fields) {
+                if (error) throw error;
+                resolve(results)
+            });
+        })
+    }
+    else {
+        console.log("Node 0 is offline, adding query to queue")
+            newquery = {
+                sql: sql,
+                node: 0
+        }
+
+        await new Promise((resolve) => {
+            db.insertOne(queue, newquery, (result) => {
+                resolve(result)
+            })
+        })
+    }
+    
 
     await new Promise ((resolve) =>  {
         if(req.query.year < 1980){
