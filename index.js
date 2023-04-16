@@ -2,64 +2,78 @@
 // import module `express`
 const express = require('express');
 var mysql = require('mysql2');
-var connection = mysql.createConnection({
-    host     : 'ccscloud3.dlsu.edu.ph',
-    port     : 39066,
-    user     : 'root',
-    password : 'Asdzxc123!',
-    database : 'imdb_full'
-});
+
+var connection, connection2, connection3
+
+const connect0 = () => {
+    connection = mysql.createConnection({
+        host     : 'ccscloud3.dlsu.edu.ph',
+        port     : 39066,
+        user     : 'root',
+        password : 'Asdzxc123!',
+        database : 'imdb_full'
+    });
+    
+    connection.connect((error) => {
+        if(error) {
+            console.log(error)
+            node0 = false;
+        }
+        else {
+            node0 = true;
+            console.log("Successful Connection to CCSCLOUD0 - imdb_full")
+        }
+    })
+
+}
+
+const connect1 = () => {
+    connection2 = mysql.createConnection({
+        host     : 'ccscloud3.dlsu.edu.ph',
+        port     : 39067,
+        user     : 'root',
+        password : 'Asdzxc123!',
+        database : 'imdb_b1980'
+    });
+    
+    connection2.connect((error) => {
+        if(error) {
+            console.log(error)
+            node1 = false;
+        }
+        else {
+            node1 = true;
+            console.log("Successful Connection to CCSCLOUD1 - imdb_b1980")
+        }
+    })
+}
+
+const connect2 = () => {
+    connection3 = mysql.createConnection({
+        host     : 'ccscloud3.dlsu.edu.ph',
+        port     : 39068,
+        user     : 'root',
+        password : 'Asdzxc123!',
+        database : 'imdb_a1980'
+    });
+    
+    connection3.connect((error) => {
+        if(error) {
+            console.log(error)
+            node2 = false;
+        }
+        else {
+            node2 = true;
+            console.log("Successful Connection to CCSCLOUD2 - imdb_a1980")
+        }
+    })
+}
+
+connect0()
+connect1()
+connect2()
 
 let node0, node1, node2
-
-connection.connect((error) => {
-    if(error) {
-        console.log(error)
-        node0 = false;
-    }
-    else {
-        node0 = true;
-        console.log("Successful Connection to CCSCLOUD0 - imdb_full")
-    }
-})
-
-var connection2 = mysql.createConnection({
-    host     : 'ccscloud3.dlsu.edu.ph',
-    port     : 39067,
-    user     : 'root',
-    password : 'Asdzxc123!',
-    database : 'imdb_b1980'
-});
-
-connection2.connect((error) => {
-    if(error) {
-        console.log(error)
-        node1 = false;
-    }
-    else {
-        node1 = true;
-        console.log("Successful Connection to CCSCLOUD1 - imdb_b1980")
-    }
-})
-
-var connection3 = mysql.createConnection({
-    host     : 'ccscloud3.dlsu.edu.ph',
-    port     : 39068,
-    user     : 'root',
-    password : 'Asdzxc123!',
-    database : 'imdb_a1980'
-});
-
-connection3.connect((error) => {
-    if(error) {
-        console.log(error)
-        node2 = false;
-    }
-    else {
-        node2 = true;
-        console.log("Successful Connection to CCSCLOUD2 - imdb_a1980")
-    }
-})
 
 // import module `hbs`
 const hbs = require('hbs');
@@ -82,10 +96,28 @@ app.listen(port, function () {
     console.log('app listening at port ' + port);
 });
 
-const test = () => {
+const testConnections = () => {
     flag0 = (connection._protocolError == null) && (node0 == true) 
     flag1 = (connection2._protocolError == null) && (node1 == true)
     flag2 = (connection3._protocolError == null) && (node2 == true)
+}
+
+const attemptReconnect = () => {
+    if (flag0 == false) {
+        //Atttempt reconnect
+        console.log("Attempting to reconnect to CCS CLOUD0")
+        connect0();
+    }
+    if (flag1 == false) {
+        //Atttempt reconnect
+        console.log("Attempting to reconnect to CCS CLOUD1")
+        connect1();
+    }
+    if (flag2 == false) {
+        //Atttempt reconnect
+        console.log("Attempting to reconnect to CCS CLOUD2")
+        connect2();
+    }
 }
 
 // Routes
@@ -93,11 +125,9 @@ const test = () => {
 app.get('/', function(req, res) {
     
 
-    test()
-
-    console.log("flag 0 = " + flag0)
-    console.log("flag 1 = " + flag1)
-    console.log("flag 2 = " + flag2)
+    testConnections()
+    attemptReconnect()
+    
     res.render('first')
 })
 
