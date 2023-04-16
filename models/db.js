@@ -1,7 +1,7 @@
 
 const mongoose = require('mongoose');
 
-const url = 'mongodb+srv://test:asdzxc123@cluster0.n4fbkuj.mongodb.net/carRepair';
+const url = 'mongodb+srv://test:asdzxc123@cluster0.n4fbkuj.mongodb.net/STADVDB';
 
 const options = {
     useUnifiedTopology: true,
