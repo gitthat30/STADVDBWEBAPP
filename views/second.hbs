@@ -33,7 +33,7 @@
 		<br>
 		<form action="/deletesql">
 			<input type="hidden" name="id" value="{{id}}">
-			
+			<input type="hidden" name="year" value="{{year}}">
 			{{#if (Equal id null)}}
 			{{else}}
 				<button type="submit">Delete</button>

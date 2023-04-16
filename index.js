@@ -49,7 +49,7 @@ hbs.registerHelper('Equal', function(x, y) {
 
 const app = express();
 app.use(express.static('script')); 
-const port = 80;
+const port = 9090;
 
 // set `hbs` as view engine
 app.set('view engine', 'hbs');
@@ -135,7 +135,28 @@ app.get('/deletesql', async function(req, res) {
         connection.query('DELETE FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
             if (error) throw error;
             resolve(results)
-          });
+        });
+
+        if(req.query.year < 1980){
+            console.log("Here")
+            connection2.query('DELETE FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                if (error) throw error;
+                else {
+                    console.log("Deleting from node 1")
+                    resolve(results)
+                }
+            });
+        }
+
+        else{
+            connection3.query('DELETE FROM movies WHERE id = ' + req.query.id, function (error, results, fields) {
+                if (error) throw error;
+                else {
+                    console.log("Deleting from node 2")
+                    resolve(results)
+                }
+            });
+        }
     })
     console.log(result)
     res.redirect("/")
