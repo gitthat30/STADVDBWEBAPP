@@ -85,7 +85,7 @@ hbs.registerHelper('Equal', function(x, y) {
 
 const app = express();
 app.use(express.static('script')); 
-const port = 9090;
+const port = 80;
 
 // MongoDB stuff
 const db = require('./models/db.js');
