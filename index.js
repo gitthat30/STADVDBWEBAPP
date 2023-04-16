@@ -255,9 +255,6 @@ app.get('/updatesql', async function(req, res) {
         req.query.rank = null
     }
 
-
-    const sql = "UPDATE movies SET name = \'" + req.query.name + "\', year = " + req.query.year + ", `rank` = " + req.query.rank + ", genres = \'" + req.query.genres + "\', director = \'" + req.query.director + "\' where id = " + req.query.id;
-
     await new Promise((resolve) => {
         testConnections()
         attemptReconnect()
@@ -271,6 +268,7 @@ app.get('/updatesql', async function(req, res) {
     })  
 
     sql = "UPDATE movies SET name = \'" + req.query.name + "\', year = " + req.query.year + ", `rank` = " + req.query.rank + ", genres = \'" + req.query.genres + "\', director = \'" + req.query.director + "\' where id = " + req.query.id;
+   
 
     await new Promise ((resolve) => {
         connection.query(sql, function (error, results, fields) {
@@ -286,29 +284,165 @@ app.get('/updatesql', async function(req, res) {
         });
     })
 
-    const sql2 = "UPDATE movies SET name = \'" + req.query.name + "\', year = " + req.query.year + ", `rank` = " + req.query.rank + ", genres = \'" + req.query.genres + "\', director = \'" + req.query.director + "\' where id = " + req.query.id;
+     // If year dips under or above 1980 and the record has to be transferred
+    sql2 = "INSERT INTO movies(id, name, year, `rank`, genres, director) values(" + result[0].id +", \'" + result[0].name + "\', " + result[0].year + ", " + result[0].rank + ", \'" + result[0].genres + "\', \'" + result[0].director + "\')"
+    delsql = 'DELETE FROM movies WHERE id = ' + result[0].id
 
-    await new Promise (async (resolve) => {
-        if(req.query.year < 1980){
-            connection2.query(sql2, function (error, results, fields) {
-                if (error) resolve(error)
-                else {
-                    console.log("Updating data in node 1")
-                    resolve(results)
-                }
-            });
+    if(req.query.year < 1980 && req.query.oldyear < 1980) {
+        if(flag1 == false) {
+            console.log("Node 1 is offline, adding query to queue")
+            newquery = {
+                sql: sql,
+                node: 1
+            }
+
+            db.insertOne(queue, newquery, (result) => {
+                resolve(result)
+            })
         }
         else {
-            connection3.query(sql2, function (error, results, fields) {
-                if (error) resolve(error)
+            await new Promise (async (resolve) => {
+                connection2.query(sql, function (error, results, fields) {
+                    if (error) resolve(error)
+                    else {
+                        console.log("Updating data in node 1")
+                        resolve(results)
+                    }
+                });
+            })
+        }
+    }
+    else if(req.query.year < 1980 && req.query.oldyear >= 1980) {
+        if(flag2 == false) {
+            console.log("Node 2 is offline, adding query to queue")
+            newquery = {
+                sql: delsql,
+                node: 2
+            }
+
+            await new Promise((resolve) => {
+                db.insertOne(queue, newquery, (result) => {
+                    resolve(result)
+                })
+            })
+        }
+        else {
+            await new Promise (async (resolve) => {
+                console.log("Here")
+                connection3.query(delsql, function (error, results, fields) {
+                if (error) resolve(error);
                 else {
-                    console.log("Updating data in node 2")
+                    console.log("Deleting from node 2")
                     resolve(results)
                 }
+                });
+            })
+        }
+
+        if(flag1 == false) {
+            console.log("Node 1 is offline, adding query to queue")
+            newquery = {
+                sql: sql2,
+                node: 1
+            }
+
+            await new Promise((resolve) => {
+                db.insertOne(queue, newquery, (result) => {
+                    resolve(result)
+                })
+            })
+        }
+        else {
+            await new Promise (async (resolve) => {
+                connection2.query(sql2, function (error, results, fields) {
+                if (error) resolve(error);
+                else {
+                    console.log("Inserting to node 1")
+                    resolve(results)
+                }
+                });
+            })
+        }
+    }
+    else if(req.query.year >= 1980 && req.query.oldyear >= 1980) {
+        if(flag2 == false) {
+            console.log("Node 2 is offline, adding query to queue")
+            newquery = {
+                sql: sql,
+                node: 2
+            }
+
+            await new Promise((resolve) => {
+                db.insertOne(queue, newquery, (result) => {
+                    resolve(result)
+                })
+            })
+        }
+        else {
+            await new Promise (async (resolve) => {
+                connection3.query(sql, function (error, results, fields) {
+                    if (error) resolve(error)
+                    else {
+                        console.log("Updating data in node 2")
+                        resolve(results)
+                    }
+                });
             });
         }
-    });
+    }
+    else if(req.query.year >= 1980 && req.query.oldyear < 1980) {
+        if(flag1 == false) {
+            console.log("Node 1 is offline, adding query to queue")
+            newquery = {
+                sql: delsql,
+                node: 1
+            }
 
+            await new Promise((resolve) => {
+                db.insertOne(queue, newquery, (result) => {
+                    resolve(result)
+                })
+            })
+        }
+        else {
+            await new Promise (async (resolve) => {
+                console.log("Here")
+                connection2.query(delsql, function (error, results, fields) {
+                if (error) resolve(error);
+                else {
+                    console.log("Deleting from node 1")
+                    resolve(results)
+                }
+                });
+            })
+        }
+
+        if(flag2 == false) {
+            console.log("Node 2 is offline, adding query to queue")
+            newquery = {
+                sql: sql2,
+                node: 2
+            }
+
+            await new Promise((resolve) => {
+                db.insertOne(queue, newquery, (result) => {
+                    resolve(result)
+                })
+            })
+        }
+        else {
+            await new Promise (async (resolve) => {
+                connection3.query(sql2, function (error, results, fields) {
+                if (error) resolve(error);
+                else {
+                    console.log("Inserting to node 2")
+                    resolve(results)
+                }
+                });
+            })
+        }      
+    }
+    
     res.render('second', result[0])
 })
 
@@ -367,7 +501,7 @@ app.get('/insertsql', async function(req, res) {
 
     await new Promise (async (resolve) => {
         if(req.query.year < 1980){
-            if(node1 == false) {
+            if(flag1 == false) {
                 console.log("Node 1 is offline, adding query to queue")
                 newquery = {
                     sql: sql2,
@@ -389,7 +523,7 @@ app.get('/insertsql', async function(req, res) {
             }
         }
         else {
-            if(node2 == false) {
+            if(flag2 == false) {
                 console.log("Node 2 is offline, adding query to queue")
                 newquery = {
                     sql: sql2,
@@ -442,7 +576,7 @@ app.get('/deletesql', async function(req, res) {
 
     await new Promise ((resolve) =>  {
         if(req.query.year < 1980){
-            if(node1 == false) {
+            if(flag1 == false) {
                 console.log("Node 1 is offline, adding query to queue")
                 newquery = {
                     sql: sql,
@@ -455,17 +589,17 @@ app.get('/deletesql', async function(req, res) {
             }
             else {
                 console.log("Here")
-            connection2.query(sql, function (error, results, fields) {
+                connection2.query(sql, function (error, results, fields) {
                 if (error) resolve(error);
                 else {
                     console.log("Deleting from node 1")
                     resolve(results)
                 }
-            });
+                });
             }
         }
         else {
-            if(node2 == false) {
+            if(flag2 == false) {
                 console.log("Node 2 is offline, adding query to queue")
                 newquery = {
                     sql: sql,
